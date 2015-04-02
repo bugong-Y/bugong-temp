@@ -1,0 +1,94 @@
+/*各模块布局*/
+
+/*头部*/
+.spa-shell-header{
+	position:absolute;
+	left:0px;
+	right:0px;
+	top:0px;
+	height:40px;
+}
+.spa-logo{
+	position:absolute;
+	top:4px;
+	left:4px;
+	width:128px;
+	height:32px;
+	background-color:orange;
+}
+.spa-login{
+	position:absolute;
+	top:4px;
+	right:0px;
+	width:64px;
+	height:32px;
+	background-color: green;
+}
+.spa-search{
+	position:absolute;
+	top:4px;
+	right:64px;
+	width:248px;
+	height:32px;
+	background-color: blue;
+}
+
+/*主体*/
+.spa-shell-content{
+	position:absolute;
+	top:40px;
+	left:0px;
+	right:0px;
+	bottom:40px;
+}
+.spa-nav{
+	position:absolute;
+	width:250px;
+	top:0px;
+	bottom:0px;
+	background-color:#eee;
+}
+.spa-main{
+	position:absolute;
+	left:250px;
+	right:0px;
+	top:0px;
+	bottom:0px;
+	background-color:#ddd;	
+}
+
+/*底部*/
+.spa-shell-footer{
+	position:absolute;
+	bottom:0px;
+	left:0px;
+	right:0px;
+	height:40px;
+}
+.spa-shell-chat{
+	position:absolute;
+	right:0px;
+	bottom:0px;
+	width:300px;
+	height:16px;
+	background-color:red;
+	z-index:10;
+	cursor: pointer;
+	border-radius:5px 0px 0px 0px;
+}
+.spa-shell-chat:hover{
+	background-color:#a00;
+}
+
+.spa-shell-modal{
+	position:absolute;
+	width:400px;
+	height:400px;
+	left:50%;
+	top:50%;
+	margin-left:-200px;
+	margin-top:-200px;
+	border-radius: 4px;
+	z-index:5;
+	background-color:#fff;
+}
