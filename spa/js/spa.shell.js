@@ -5,8 +5,9 @@
  */
 
 spa.shell = (function () {
-	var initModule, copyAnchorMap, changeAnchorPart, setJqueryMap, toggleChat,
-		onClickChat, onHashChange;
+	var initModule, copyAnchorMap, changeAnchorPart,
+		setJqueryMap, toggleChat, setChatAnchor,
+		onHashChange, onResize;
 	var configMap = {//储存程序配置
 		layoutHtml: 
 			'<div class="spa-shell-header">'
@@ -18,40 +19,39 @@ spa.shell = (function () {
 				+ '<div class="spa-nav"></div>'
 				+ '<div class="spa-main"></div>'
 			+ '</div>'
-			+ '<div class="spa-shell-footer"></div>'
-			+ '<div class="spa-shell-chat"></div>'
-			+ '<div class="spa-shell-modal"></div>',
-		chatExtendHeight: 460,
-		chatRetractHeight: 16,
-		chatExtendTime: 800,
-		chatRetractTime: 400,
-		chatExtendTitle: '点击展开',
-		chatRetractTitle: '点击折叠',
+			+ '<div class="spa-shell-footer"></div>',
+			//+ '<div class="spa-shell-modal"></div>',
 		anchorSchemaMap: {//设置传递给uriAnchor的参数
 			chat: {
 				opened: true,
 				closed: true
 			}
-		}
+		},
+		resizeInterval: 200  
 	};
 	var stateMap = {//中间层，储存元素当前状态
 		$container: null,
-		isChatRetract: true,
-		anchorMap: {}
+		anchorMap: {},
+		resizeInterId: undefined
 	};
 	var jqueryMap = {};  //缓存jQuery对象
 	
 	
-	copyAnchorMap = function () {
+	copyAnchorMap = function () {//深度复制，并生成一个新的对象
 		return $.extend(true, {}, stateMap.anchorMap);
 	};
 	
 	setJqueryMap = function () {//设置需缓存的jQuery对象
 		var $container = stateMap.$container;
 		jqueryMap = {
-			$container: $container,
-			$chat: $container.find('.spa-shell-chat')
+			$container: $container
 		};
+	};
+	
+	setChatAnchor = function (positionType) {//封装一层，使其可通过spa.chat.configModule传递给chat模块调用
+		return changeAnchorPart({
+			chat: positionType
+		});
 	};
 	
 	changeAnchorPart = function (anchorMap) {//改变浏览器地址栏中的hash值
@@ -82,50 +82,11 @@ spa.shell = (function () {
 		return true;
 	};
 	
-	toggleChat = function (action, callback) {//切换chat模块状态
-		var objTemp = jqueryMap.$chat;
-		var curHeight = objTemp.height();
-		var isOpened = (curHeight === configMap.chatExtendHeight);
-		var isColsed = (curHeight === configMap.chatRetractHeight);
-		if (!isOpened && !isColsed) {//动画执行中，不进行任何操作
-			return;
-		}
-		if (action) {//当前状态关闭，执行展开动作
-			objTemp.animate(
-				{height: configMap.chatExtendHeight}, 
-				configMap.chatExtendTime,
-				function () {
-					jqueryMap.$chat.attr('title', configMap.chatRetractTitle);
-					stateMap.isChatRetract = false;
-					callback&&callback();
-				}
-			);
-			return true;
-		}
-		objTemp.animate(
-			{height: configMap.chatRetractHeight}, 
-			configMap.chatRetractTime,
-			function () {
-				jqueryMap.$chat.attr('title', configMap.chatExtendTitle);
-				stateMap.isChatRetract = true;
-				callback&&callback();
-			}
-		);
-		return true;
-	};
-	
-	onClickChat = function (e) {//点击chat模块时，执行的操作
-		//toggleChat();  改为改变hash值，触发hashchange事件，执行动作
-		changeAnchorPart({
-			chat: (stateMap.isChatRetract ? 'opened' : 'closed')
-		});
-		return false;
-	};
-	
 	onHashChange = function (e) {//浏览器hashchange事件处理函数
 		var anchorMapPrevious = copyAnchorMap();  //读取之前缓存的hash值
 		var anchorMapProposed;
 		var sChatPrevious, sChatProposed;
+		var isOk = true;
 		try {
 			anchorMapProposed = $.uriAnchor.makeAnchorMap();  //makeAnchorMap会自动添加_s属性
 		} catch (e) {
@@ -140,18 +101,37 @@ spa.shell = (function () {
 			sChatProposed = anchorMapProposed.chat;
 			switch (sChatProposed) {
 				case 'opened':
-						toggleChat(true);
+						isOk = spa.chat.setSliderPosition('opened');  //调用真正执行动画的函数
 						break;
 				case 'closed':
-						toggleChat(false);
+						isOk = spa.chat.setSliderPosition('closed');  //调用真正执行动画的函数
 						break;
 				default: 
-						toggleChat(false);
+						spa.chat.setSliderPosition('closed');
 						delete anchorMapProposed.chat;  //删除错误的参数，用于清空hash值
 						$.uriAnchor.setAnchor(anchorMapProposed, null, true);  //清空地址栏中的hash值，chat模块折叠
 			}
 		}
+		if (!isOk) {//如果动画函数出错，一般是传入的状态有问题，opened，closed等
+			if (anchorMapPrevious) {//如果存在缓存的hash值，则还原地址栏
+				$.uriAnchor.setAnchor(anchorMapPrevious, null, true);
+				stateMap.anchorMap = anchorMapPrevious;
+			} else {
+				delete anchorMapProposed.chat;  //删除错误的参数，用于清空hash值
+				$.uriAnchor.setAnchor(anchorMapProposed, null, true);  //清空地址栏
+			}
+		}
 		return false;
+	};
+	
+	onResize = function () {//窗口尺寸变化事件侦听器
+		if (stateMap.resizeInterId) {//防止浏览器resize事件触发频率太高
+			return true;
+		}
+		spa.chat.handleResize();
+		stateMap.resizeInterId = setTimeout(function () {
+			stateMap.resizeInterId = undefined;  //定时器完成时，重置resizeInterId
+		}, configMap.resizeInterval);
 	};
 	
 	initModule = function ($container) {//程序初始化
@@ -159,18 +139,23 @@ spa.shell = (function () {
 		stateMap.$container = $container;
 		$container.html(configMap.layoutHtml);
 		setJqueryMap();
-		//chat模块初始化
-		stateMap.isChatRetract = true;
-		jqueryMap.$chat
-			.attr('title', configMap.chatExtendTitle)
-			.click(onClickChat);
+
 		//配置uriAnchor
 		$.uriAnchor.configModule({
 			schema_map: configMap.anchorSchemaMap  //uriAnchor插件定义了schema_map的写法，不能为驼峰
 		});
+		
+		spa.chat.configModule({//设置chat初始配置
+			setChatAnchor: setChatAnchor
+			//chatModel: spa.model.chat,
+			//peopleModel: spa.model.people
+		});
+		spa.chat.initModule(jqueryMap.$container);
+		
 		//绑定hashchange事件
 		$(window)
 			.bind('hashchange', onHashChange)
+			.bind('resize', onResize)
 			.trigger('hashchange');
 	};
 	
