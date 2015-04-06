@@ -1,4 +1,7 @@
-/*各模块布局*/
+/*
+ * spa.shell.css
+ * shell模块样式表
+ */  
 
 /*头部*/
 .spa-shell-header{
@@ -11,23 +14,34 @@
 .spa-logo{
 	position:absolute;
 	top:4px;
-	left:4px;
+	left:8px;
 	width:128px;
 	height:32px;
-	background-color:orange;
+}
+.spa-logo h1{
+	font-weight: 800;
+	font-size:22px;
+	line-height:32px;
+	margin:0;
 }
 .spa-login{
 	position:absolute;
 	top:4px;
 	right:0px;
-	width:64px;
+	width:160px;
 	height:32px;
-	background-color: green;
+	line-height: 32px;
+	background-color: #888;
+	color:#fff;
+	text-align: center;
+	cursor: pointer;
+	overflow: hidden;
+	text-overflow: ellipsis;	
 }
 .spa-search{
 	position:absolute;
 	top:4px;
-	right:64px;
+	right:160px;
 	width:248px;
 	height:32px;
 	background-color: blue;
@@ -47,6 +61,7 @@
 	top:0px;
 	bottom:0px;
 	background-color:#eee;
+	z-index: 1;
 }
 .spa-main{
 	position:absolute;

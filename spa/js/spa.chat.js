@@ -96,7 +96,6 @@ spa.chat = (function () {
 			return false;
 		}
 		setPxSize();
-		console.log('正在调整！');
 		if (stateMap.positionType === 'opened') {
 			jqueryMap.$slider.css({
 				'height': stateMap.sliderOpenedPx

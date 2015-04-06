@@ -7,11 +7,11 @@
 spa.shell = (function () {
 	var initModule, copyAnchorMap, changeAnchorPart,
 		setJqueryMap, toggleChat, setChatAnchor,
-		onHashChange, onResize;
+		onHashChange, onResize, onTapLog, onLogin, onLogout;
 	var configMap = {//储存程序配置
 		layoutHtml: 
 			'<div class="spa-shell-header">'
-				+ '<div class="spa-logo"></div>'
+				+ '<div class="spa-logo"><h1>单页应用</h1></div>'
 				+ '<div class="spa-login"></div>'
 				+ '<div class="spa-search"></div>'
 			+ '</div>'
@@ -44,7 +44,9 @@ spa.shell = (function () {
 	setJqueryMap = function () {//设置需缓存的jQuery对象
 		var $container = stateMap.$container;
 		jqueryMap = {
-			$container: $container
+			$container: $container,
+			$log: $container.find('.spa-login'),
+			$nav: $container.find('.spa-nav')
 		};
 	};
 	
@@ -80,6 +82,27 @@ spa.shell = (function () {
 			return false;
 		}
 		return true;
+	};
+	
+	onTapLog = function (e) {//点击登录区域时，执行的操作
+		var logText, userName;
+		var user = spa.model.people.getUser();
+		if (user.getIsAnon()) {
+			userName = prompt('请登录！');
+			spa.model.people.login(userName);
+			jqueryMap.$log.text('...登录中...');
+		} else {
+			spa.model.people.logout();
+		}
+		return false;
+	};
+	
+	onLogin = function (e, loginUser) {//登录事件处理函数
+		jqueryMap.$log.text(loginUser.name);
+	};
+	
+	onLogout = function (e, logoutUser) {//登出事件处理函数
+		jqueryMap.$log.text('请登录！');
 	};
 	
 	onHashChange = function (e) {//浏览器hashchange事件处理函数
@@ -157,6 +180,12 @@ spa.shell = (function () {
 			.bind('hashchange', onHashChange)
 			.bind('resize', onResize)
 			.trigger('hashchange');
+			
+		$.gevent.subscribe($container, 'spa-login', onLogin);
+		$.gevent.subscribe($container, 'spa-logout', onLogout);
+		jqueryMap.$log
+			.text('请登录！')
+			.bind('utap', onTapLog);
 	};
 	
 	return {
