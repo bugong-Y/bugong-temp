@@ -14,11 +14,13 @@ spa.model = (function () {
 		peopleCidMap: {},  //通过cid映射所有用户  
 		peopleDb: TAFFY(),  //生成taffyDb集合，初始化为空集合
 		cidSerial: 0,  //客户端id编号
-		user: null  //引用当前用户
+		user: null,  //引用当前用户
+		isConnected: false  //当前用户是否在聊天室中
 	};
 	var isFakeData = true;
 	var personProto, makePerson, people, makeCid,
-		clearPeopleDb, completeLogin, removePerson, initModule;
+		clearPeopleDb, completeLogin, removePerson, 
+		chat, initModule;
 	
 	personProto = {//person对象的原型对象，初始包含两个判断是匿名用户还是非匿名用户的方法
 		getIsUser: function () {
@@ -64,7 +66,7 @@ spa.model = (function () {
 		}
 	};
 	
-	removePerson = function (person) {
+	removePerson = function (person) {//移除一个指定的person对象
 		if (!person) {
 			return false;
 		}
@@ -79,13 +81,14 @@ spa.model = (function () {
 	};
 
 	
-	completeLogin = function (userList) {//userUpdate事件（用户登录）的回调函数，更新当前用户
+	completeLogin = function (userList) {//addUser（userUpdate）事件（用户登录）的回调函数，更新当前用户
 		var userMap = userList[0];  //spa.fake模块传入的一个数组
 		delete stateMap.peopleCidMap[userMap.cid];
 		stateMap.user.cid = userMap._id;
 		stateMap.user.id = userMap._id;
 		stateMap.user.cssMap = userMap.cssMap;
 		stateMap.peopleCidMap[userMap._id] = stateMap.user;
+		chat.join();  //进入聊天室
 		$.gevent.publish('spa-login', [stateMap.user]);  //发布spa-login事件
 	};
 	
@@ -129,6 +132,7 @@ spa.model = (function () {
 		logout = function () {//当前用户退出登录
 			var isRemoved, 
 				user = stateMap.user;
+			chat.leave();  //离开聊天室
 			isRemoved = removePerson(user);
 			stateMap.user = stateMap.anonUser;  //stateMap.anonUser为一个匿名用户，初始化时定义
 			$.gevent.publish('spa-logout', [user]);  //发布spa-logout事件
@@ -144,7 +148,137 @@ spa.model = (function () {
 		};
 	}());
 	
-	
+	chat = (function () {
+		var publishListChange, updateList, leaveChat, joinChat;
+		var publishUpdateChat, getChatting, setChatting, sendMsg;
+		var chatting = null;  //缓存当前正在聊天的人
+		
+		updateList = function (argList) {//更新在线用户列表
+			var i, personMap, makePersonMap;
+			var peopleList = argList[0];
+			var isChattingOnline = false;
+			
+			clearPeopleDb();
+			
+			PERSON:
+			for (i = 0; i < peopleList.length; i++) {
+				personMap = peopleList[i];
+				if (!personMap.name) {//不存在name属性时，返回
+					continue PERSON;
+				}
+				if (stateMap.user && stateMap.user.id === personMap.id) {//如果是当前用户
+					stateMap.user.cssMap = personMap.cssMap;  //缓存其当前样式
+					continue PERSON;
+				}
+				makePersonMap = {
+					cid: personMap._id,
+					cssMap: personMap.cssMap,
+					id: personMap._id,
+					name: personMap.name
+				};
+				if (chatting && chatting.id === makePersonMap.id) {//如果新返回的列表中，上一次聊天的对象依旧存在
+					isChattingOnline = true;  
+				}
+				makePerson(makePersonMap);  //存入数据库，并添加映射			
+			}
+			stateMap.peopleDb.sort('name');
+			if (chatting && !isChattingOnline) {//正在聊天的对象，已经离开
+				setChatting('');
+			}
+		};
+		
+		publishListChange = function (argList) {//listchange事件，在线人员发生改变时触发
+			updateList(argList);
+			$.gevent.publish('spa-listchange', [argList]);
+		};
+		
+		publishUpdateChat = function (argList) {//updatechat事件，聊天内容变更时触发
+			var msgMap = argList[0];
+			if (!chatting) {//如果不存在正在聊天的对象
+				setChatting(msgMap.senderId);  //msgMap.senderId，正在聊天的对象
+			} else if (msgMap.senderId !== stateMap.user.id && msgMap.senderId !== chatting.id) {//排除当前用户和当前正在聊天的用户
+				setChatting(msgMap.senderId);  //重新设置聊天对象
+			}
+			$.gevent.publish('spa-updatechat', [msgMap]);  //真正的处理，并未设置，目前只是发布了一个事件
+		};
+		
+		leaveChat = function () {//离开聊天室
+			var sio = isFakeData ? spa.fake.mockSio : spa.data.Sio();
+			chatting = null;  //清空正在聊天的人
+			stateMap.isConnected = false;  
+			if (sio) {
+				sio.emit('leavechat');
+			}
+		};
+		
+		getChatting = function () {//得到当前正在聊天的人
+			return chatting;
+		};
+		
+		joinChat = function () {//进入聊天室
+			var sio;
+			if (stateMap.isConnected) {
+				return false;
+			}
+			if (stateMap.user.getIsAnon()) {
+				console.warn('用户未登录，不能进入聊天室！');
+				return false;
+			}
+			sio = isFakeData ? spa.fake.mockSio : spa.data.getSio();
+			sio.on('listchange', publishListChange);  //通过onSio传入listchange的回调函数publishListChange
+			sio.on('updatechat', publishUpdateChat);  //通过onSio传入updatechat的回调函数publishUpdateChat
+			stateMap.isConnected = true;
+			return true;
+		};
+		
+		sendMsg = function (msgText) {//当前用户发送消息
+			var msgMap;
+			var sio = isFakeData ? spa.fake.mockSio : spa.data.getSio();
+			
+			if (!sio) {
+				return false;
+			}
+			if (!(stateMap.user && chatting)) {
+				return false;
+			}
+			msgMap = {
+				destId: chatting.id,  //正在聊天的对象
+				destName: chatting.name,
+				senderId: stateMap.user.id,  //用户自己
+				msgText: msgText
+			};
+			publishUpdateChat([msgMap]);  //执行更新聊天室操作
+			sio.emit('updatechat', msgMap);  //模拟触发updatechat事件，让信息接受者，更新其聊天窗口
+			return true;
+		};
+		
+		setChatting = function (personId) {//设置正在聊天的对象
+			var newChatting;
+			newChatting = stateMap.peopleCidMap[personId];  //通过映射，得到一个person对象
+			if (newChatting) {
+				if (chatting && chatting.id === newChatting.id) {//如果聊天对象并未发生变动
+					return false;
+				}
+			} else {
+				newChatting = null;
+			}
+			$.gevent.publish('spa-setchatting', {//暂未设置处理函数，目前用控制台模拟
+				oldChatting: chatting,
+				newChatting: newChatting
+			});
+			chatting = newChatting;
+			return true;
+		};
+		
+		return {
+			leave: leaveChat,
+			join: joinChat,
+			getChatting: getChatting,
+			setChatting: setChatting,
+			sendMsg: sendMsg
+		};
+		
+	}());
 	
 	initModule = function () {
 		var i, peopleList, personMap;
@@ -155,7 +289,8 @@ spa.model = (function () {
 		});
 		stateMap.user = stateMap.anonUser;  //初始化时，当前用户为匿名用户
 		if (isFakeData) {
-			peopleList = spa.fake.getPeopleList();  //得到模拟的数据
+			//peopleList = spa.fake.getPeopleList();  //得到模拟的数据
+			peopleList = spa.fake.peopleList;
 			for (i = 0; i < peopleList.length; i++) {
 				personMap = peopleList[i];
 				makePerson({
@@ -170,7 +305,8 @@ spa.model = (function () {
 	
 	return {
 		initModule: initModule,
-		people: people
+		people: people,
+		chat: chat
 	};
 	
 }());
