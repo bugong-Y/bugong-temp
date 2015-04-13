@@ -113,8 +113,8 @@ spa.model = (function () {
 			stateMap.user = makePerson({//伪造一个将要登录的新用户
 				cid: makeCid(),
 				cssMap: {
-					top: 25,
-					left: 25,
+					top: 180,
+					left: 20,
 					'background-color': '#8f8'
 				},
 				name: name
@@ -130,13 +130,11 @@ spa.model = (function () {
 		};
 		
 		logout = function () {//当前用户退出登录
-			var isRemoved, 
-				user = stateMap.user;
+			var user = stateMap.user;
 			chat.leave();  //离开聊天室
-			isRemoved = removePerson(user);
 			stateMap.user = stateMap.anonUser;  //stateMap.anonUser为一个匿名用户，初始化时定义
+			clearPeopleDb();
 			$.gevent.publish('spa-logout', [user]);  //发布spa-logout事件
-			return isRemoved;
 		};
 		
 		return {
@@ -152,21 +150,22 @@ spa.model = (function () {
 		var publishListChange, updateList, leaveChat, joinChat;
 		var publishUpdateChat, getChatting, setChatting, sendMsg;
 		var chatting = null;  //缓存当前正在聊天的人
-		
+		var updateAvatar;
+
 		updateList = function (argList) {//更新在线用户列表
 			var i, personMap, makePersonMap;
 			var peopleList = argList[0];
 			var isChattingOnline = false;
-			
+			var person;
 			clearPeopleDb();
-			
 			PERSON:
 			for (i = 0; i < peopleList.length; i++) {
 				personMap = peopleList[i];
 				if (!personMap.name) {//不存在name属性时，返回
 					continue PERSON;
 				}
-				if (stateMap.user && stateMap.user.id === personMap.id) {//如果是当前用户
+				if (stateMap.user && stateMap.user.id === personMap._id) {//如果是当前用户
+                    console.log('dddd');
 					stateMap.user.cssMap = personMap.cssMap;  //缓存其当前样式
 					continue PERSON;
 				}
@@ -176,10 +175,11 @@ spa.model = (function () {
 					id: personMap._id,
 					name: personMap.name
 				};
+				person = makePerson(makePersonMap);  //存入数据库，并添加映射
 				if (chatting && chatting.id === makePersonMap.id) {//如果新返回的列表中，上一次聊天的对象依旧存在
-					isChattingOnline = true;  
+					isChattingOnline = true;
+					chatting = person;
 				}
-				makePerson(makePersonMap);  //存入数据库，并添加映射			
 			}
 			stateMap.peopleDb.sort('name');
 			if (chatting && !isChattingOnline) {//正在聊天的对象，已经离开
@@ -192,14 +192,14 @@ spa.model = (function () {
 			$.gevent.publish('spa-listchange', [argList]);
 		};
 		
-		publishUpdateChat = function (argList) {//updatechat事件，聊天内容变更时触发
+		publishUpdateChat = function (argList) {//发布spa-updatechat事件
 			var msgMap = argList[0];
 			if (!chatting) {//如果不存在正在聊天的对象
-				setChatting(msgMap.senderId);  //msgMap.senderId，正在聊天的对象
+				setChatting(msgMap.senderId);  //msgMap.senderId，设置聊天对象为自己
 			} else if (msgMap.senderId !== stateMap.user.id && msgMap.senderId !== chatting.id) {//排除当前用户和当前正在聊天的用户
-				setChatting(msgMap.senderId);  //重新设置聊天对象
+				setChatting(msgMap.senderId);  //重新设置新的聊天对象
 			}
-			$.gevent.publish('spa-updatechat', [msgMap]);  //真正的处理，并未设置，目前只是发布了一个事件
+			$.gevent.publish('spa-updatechat', [msgMap]);  //发布spa-updatechat事件，由相应的处理程序处理
 		};
 		
 		leaveChat = function () {//离开聊天室
@@ -248,7 +248,7 @@ spa.model = (function () {
 				msgText: msgText
 			};
 			publishUpdateChat([msgMap]);  //执行更新聊天室操作
-			sio.emit('updatechat', msgMap);  //模拟触发updatechat事件，让信息接受者，更新其聊天窗口
+			sio.emit('updatechat', msgMap);  //模拟对方回复我信息
 			return true;
 		};
 		
@@ -262,12 +262,19 @@ spa.model = (function () {
 			} else {
 				newChatting = null;
 			}
-			$.gevent.publish('spa-setchatting', {//暂未设置处理函数，目前用控制台模拟
+			$.gevent.publish('spa-setchatting', {//发布spa-setchatting事件
 				oldChatting: chatting,
 				newChatting: newChatting
 			});
 			chatting = newChatting;
 			return true;
+		};
+
+		updateAvatar = function (avatarUpdateMap) {//更新peroson对象样式表
+			var sio = isFakeData ? spa.fake.mockSio : spa.data.getSio();
+			if (sio) {
+				sio.emit('updateavater', avatarUpdateMap);
+			}
 		};
 		
 		return {
@@ -275,7 +282,8 @@ spa.model = (function () {
 			join: joinChat,
 			getChatting: getChatting,
 			setChatting: setChatting,
-			sendMsg: sendMsg
+			sendMsg: sendMsg,
+			updateAvatar: updateAvatar
 		};
 		
 	}());
@@ -289,8 +297,7 @@ spa.model = (function () {
 		});
 		stateMap.user = stateMap.anonUser;  //初始化时，当前用户为匿名用户
 		if (isFakeData) {
-			//peopleList = spa.fake.getPeopleList();  //得到模拟的数据
-			peopleList = spa.fake.peopleList;
+			peopleList = spa.fake.peopleList;  //得到模拟的数据
 			for (i = 0; i < peopleList.length; i++) {
 				personMap = peopleList[i];
 				makePerson({

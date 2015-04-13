@@ -5,6 +5,7 @@
  */
 
 spa.util = (function () {
+	'use strict';
 	var makeError, setConfigMap;
 	
 	makeError = function (name, msg, data) {//构造一个错误

@@ -5,8 +5,9 @@
  */
 
 spa.shell = (function () {
+	'use strict';
 	var initModule, copyAnchorMap, changeAnchorPart,
-		setJqueryMap, toggleChat, setChatAnchor,
+		setJqueryMap, setChatAnchor,
 		onHashChange, onResize, onTapLog, onLogin, onLogout;
 	var configMap = {//储存程序配置
 		layoutHtml: 
@@ -169,12 +170,17 @@ spa.shell = (function () {
 		});
 		
 		spa.chat.configModule({//设置chat初始配置
-			setChatAnchor: setChatAnchor
-			//chatModel: spa.model.chat,
-			//peopleModel: spa.model.people
+			setChatAnchor: setChatAnchor,
+			chatModel: spa.model.chat,
+			peopleModel: spa.model.people
 		});
 		spa.chat.initModule(jqueryMap.$container);
-		
+
+		spa.avatar.configModule({
+            chatModel: spa.model.chat,
+            peopleModel: spa.model.people
+        });
+        spa.avatar.initModule(jqueryMap.$nav);
 		//绑定hashchange事件
 		$(window)
 			.bind('hashchange', onHashChange)

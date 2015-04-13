@@ -63,7 +63,7 @@ spa.fake = (function () {
 		};
 		
 		emitSio = function (msgType, data) {
-			var personMap;
+			var personMap, i;
 			
 			if (msgType === 'addUser' && callbackMap.userUpdate) {//userUpdate为从spa.mode模块传入的函数completeLogin
 				setTimeout(function () {//延迟3000ms，模拟登录
@@ -76,20 +76,19 @@ spa.fake = (function () {
 					callbackMap.userUpdate([personMap]);
 				}, 3000);
 			}
-			
+
 			if (msgType === 'updatechat' && callbackMap.updatechat) {//发送信息，接收信息时
 				setTimeout(function () {
-					var user = spa.model.people.getUser();	
-					
+					var user = spa.model.people.getUser();  //得到当前用户
 					callbackMap.updatechat([{//模拟我接收信息
 						destId: user.id,  //消息发送者
 						destName: user.name, 
 						senderId: data.destId,  //data.destId代表我（另一个我），消息接受者
-						msgText: '我是' + user.name
+						msgText: '你好，' + user.name + ' ，这是我根据你发给我的消息回复的！'
 					}]);
 				}, 2000);
 			}
-			
+
 			if (msgType === 'leavechat') {//用户（可能是我）离开聊天室时，当前并未指定谁离开
 				delete callbackMap.listchange;  //移除对listchange事件处理函数的引用
 				delete callbackMap.updatechat;  //移除对updatechat事件处理函数的引用
@@ -98,6 +97,16 @@ spa.fake = (function () {
 					listChangeTimeoutId = undefined;
 				}
 				sendListChange();  //触发listchange事件
+			}
+
+			if (msgType === 'updateavatar' && callbackMap.listchange) {//更新peroson对象样式表
+				for (i = 0; i < peopleList.length; i++) {
+					if (peopleList[i]._id === data.personId) {
+						peopleList[i].cssMap = data.cssMap;
+						break;
+					}
+				}
+				callbackMap.listchange([peopleList]);
 			}
 		};
 		
@@ -113,7 +122,7 @@ spa.fake = (function () {
 			}, 1000);
 		};
 		
-		emitMockMsg = function () {//模拟用户向我发送信息
+		emitMockMsg = function () {//模拟用户向我发送信息，自动发送
 			setTimeout(function () {
 				var user = spa.model.people.getUser();
 				if (callbackMap.updatechat) {
@@ -121,7 +130,7 @@ spa.fake = (function () {
 						destId: user.id,  //消息接收者
 						destName: user.name,
 						senderId: 'id_04',  //消息发送者
-						msgText: '你好，'+ user.name + '，我发生了一些操作!'
+						msgText: '你好，'+ user.name + '，我向你发消息来了!'
 					}]);
 				} else {
 					emitMockMsg();
@@ -129,7 +138,7 @@ spa.fake = (function () {
 			}, 8000);
 		};
 		
-		sendListChange();  //模拟用户离开
+		sendListChange();  //模拟用户列表变化
 		
 		return {
 			emit: emitSio,

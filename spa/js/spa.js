@@ -8,6 +8,7 @@ var spa = (function () {
 	'use strict';
 	
 	var initModule = function ($container) {
+		spa.data.initModule();  //必须最先初始化data
 		spa.model.initModule();
 		spa.shell.initModule($container);
 	};

@@ -3,10 +3,11 @@
 	<head>
 		<meta charset="utf-8">
 		<title>spa布局</title>
-		<link rel="stylesheet" type="text/css" href="css/reset.css" />
-		<link rel="stylesheet" type="text/css" href="css/spa.css" />
-		<link rel="stylesheet" type="text/css" href="css/spa.shell.css" />
-		<link rel="stylesheet" type="text/css" href="css/spa.chat.css" />
+		<link type="text/css" rel="stylesheet" href="css/reset.css" />
+		<link type="text/css" rel="stylesheet" href="css/spa.css" />
+		<link type="text/css" rel="stylesheet" href="css/spa.shell.css" />
+		<link type="text/css" rel="stylesheet" href="css/spa.chat.css" />
+		<link type="text/css" rel="stylesheet" href="css/spa.avatar.css" />
 	</head>
 	<body>
 		<div id="spa">
@@ -28,11 +29,19 @@
 					</div>
 					<div class="spa-chat-close">×</div>
 					<div class="spa-chat-hold">
-						<div class="spa-chat-message"></div>
-						<div class="spa-chat-box">
-							<input type="text"  />
-							<div>发送</div>
-						</div>
+						<div class="spa-chat-list">
+                            <div class="spa-chat-list-box"></div>
+                        </div>
+                        <div class="spa-chat-message-wrapper">
+                            <div class="spa-chat-message"></div>
+                            <div class="spa-chat-box">
+                                <form class="spa-chat-form">
+                                    <input type="text"  />
+                                    <input type="submit" style="display: none;" />
+                                    <div class="spa-chat-send">发送</div>
+                                </form>
+                            </div>
+                        </div>
 					</div>
 				</div>
 			</div>

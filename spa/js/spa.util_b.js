@@ -19,31 +19,31 @@ spa.util_b = (function () {
 	};	
 	var decodeHtml, encodeHtml,  getEmSize;
 	
-	configMap.encodeNoampMap = $.extend(true, {}, configMap.htmlEncodeMap);
+	configMap.encodeNoampMap = $.extend(true, {}, configMap.htmlEncodeMap);  //不包含&的map
 	delete configMap.encodeNoampMap['&'];
 	
-	decodeHtml = function (str) {
+	decodeHtml = function (str) {//只得到其中的文本
 		return $('<div/>').html(str || '').text();
 	};
 	
-	encodeHtml = function (argStr, excludeAmp) {
+	encodeHtml = function (argStr, excludeAmp) {//编制成计算机语言
 		var inputStr = String(argStr);
 		var regex, lookUpMap;
-		if (excludeAmp) {
+		if (excludeAmp) {//是否替换&
 			lookUpMap = configMap.encodeNoampMap;
 			regex = configMap.regEncodeNoamp;
 		} else {
 			lookUpMap = configMap.htmlEncodeMap;
 			regex = configMap.regEncodeHtml;
 		}
-		return inputStr.replace(regex, function (match, name) {
+		return inputStr.replace(regex, function (match, part1) {
 			return lookUpMap[match] || '';
 		});
 	};
 	
-	getEmSize = function (elem) {
+	getEmSize = function (elem) {//得到当前字体像素大小，从而得到1em代表多少像素
 		return Number(
-			getComputedStyle(elem, '').fontSize.match(/\d*\.?\d*/)[0]
+			getComputedStyle(elem, '').fontSize.match(/\d*\.?\d*/)[0]  //getComputedStyle,第二个参数为伪类
 		);
 	};
 	
