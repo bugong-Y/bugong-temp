@@ -9,8 +9,8 @@ var server;
 app.configure(function () {//app.configure用来组织中间件
     app.use(express.bodyParser());
     app.use(express.methodOverride());
-    app.use(express.basicAuth('yyl', '123789'));
-    app.use(express.static(__dirname + '/public'));  //__dirname为系统根目录，全局变量
+    //app.use(express.basicAuth('yyl', '123789'));
+    app.use(express.static(__dirname + '/public/'));  //__dirname为系统根目录，全局变量
     app.use(app.router);
 });
 app.configure('development', function () {//开发环境  SET NODE_ENV=development node app
