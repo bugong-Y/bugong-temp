@@ -1,5 +1,5 @@
 { "type" : "object",
-  "additionalProperties" : false,
+  "additionalProperties" : true,
   "properties" : {
     "_id" : {
       "type"      : "string",
@@ -16,7 +16,7 @@
     },
     "cssMap": {
       "type" : "object",
-      "additionalProperties" : false,
+      "additionalProperties" : true,
       "properties" : {
         "background-color" : {
           "required"  : true,

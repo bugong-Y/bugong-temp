@@ -17,7 +17,7 @@ spa.model = (function () {
 		user: null,  //引用当前用户
 		isConnected: false  //当前用户是否在聊天室中
 	};
-	var isFakeData = true;
+	var isFakeData = false;
 	var personProto, makePerson, people, makeCid,
 		clearPeopleDb, completeLogin, removePerson, 
 		chat, initModule;
@@ -81,7 +81,7 @@ spa.model = (function () {
 	};
 
 	
-	completeLogin = function (userList) {//addUser（userUpdate）事件（用户登录）的回调函数，更新当前用户
+	completeLogin = function (userList) {//adduser（userUpdate）事件（用户登录）的回调函数，更新当前用户
 		var userMap = userList[0];  //spa.fake模块传入的一个数组
 		delete stateMap.peopleCidMap[userMap.cid];
 		stateMap.user.cid = userMap._id;
@@ -122,7 +122,7 @@ spa.model = (function () {
 			
 			sio.on('userUpdate', completeLogin);  //向spa.fake模块，传递一个回调函数，供emit使用
 			
-			sio.emit('addUser', {//模拟触发登录事件
+			sio.emit('adduser', {//模拟触发登录事件
 				cid: stateMap.user.cid,
 				cssMap: stateMap.user.cssMap,
 				name: stateMap.user.name

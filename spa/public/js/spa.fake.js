@@ -65,7 +65,7 @@ spa.fake = (function () {
 		emitSio = function (msgType, data) {
 			var personMap, i;
 			
-			if (msgType === 'addUser' && callbackMap.userUpdate) {//userUpdate为从spa.mode模块传入的函数completeLogin
+			if (msgType === 'adduser' && callbackMap.userUpdate) {//userUpdate为从spa.mode模块传入的函数completeLogin
 				setTimeout(function () {//延迟3000ms，模拟登录
 					personMap = {
 						_id: makeFakeId(),
