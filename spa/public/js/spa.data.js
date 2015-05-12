@@ -9,10 +9,10 @@ spa.data = (function () {
 	var stateMap = {
         sio: null
     };
-    var makeSio, getSio, initModule;
+    var makeSio, getSio, clearSio, initModule;
 
     makeSio = function () {
-        var socket = io.connect('/chat');
+        var socket = io.connect('http://localhost:3000/chat', {'force new connection': true});  // {'force new connection': true}  同一页面每次登录时强制重新连接socket，解决多次登录消息重复bug
         return {
             emit: function (eventName, data) {
                 socket.emit(eventName, data);
@@ -32,12 +32,17 @@ spa.data = (function () {
         return stateMap.sio;
     };
 
+    clearSio = function () {
+        stateMap.sio = null;
+    };
+
     initModule = function () {
 
     };
 
 	return {
         getSio: getSio,
+        clearSio: clearSio,
         initModule: initModule
     };
 }());

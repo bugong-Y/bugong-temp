@@ -25,7 +25,9 @@ app.configure('production' ,function () {//生产环境
     console.log('production');
     app.use(express.errorHandler());
 });
+
 server = http.createServer(app);
-routes.configRoutes(app, server);  //必须传入server参数，否则会报错  warn  - error raised: Error: listen EACCES
+routes.configRoutes(app, server);
 server.listen(3000);
+
 console.log('express server is listening on port %d in %s mode', server.address().port, app.settings.env);

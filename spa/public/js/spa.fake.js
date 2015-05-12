@@ -59,13 +59,13 @@ spa.fake = (function () {
 		var emitMockMsg;
 		
 		onSio = function (msgType, callback) {//在callbackMap对象中缓存一个回调函数
-			callbackMap[msgType] = callback;  //如callbackMap['userUpdate'] = completeLogin;
+			callbackMap[msgType] = callback;  //如callbackMap['userupdate'] = completeLogin;
 		};
 		
 		emitSio = function (msgType, data) {
 			var personMap, i;
 			
-			if (msgType === 'adduser' && callbackMap.userUpdate) {//userUpdate为从spa.mode模块传入的函数completeLogin
+			if (msgType === 'adduser' && callbackMap.userupdate) {//userUpdate为从spa.mode模块传入的函数completeLogin
 				setTimeout(function () {//延迟3000ms，模拟登录
 					personMap = {
 						_id: makeFakeId(),
@@ -73,7 +73,7 @@ spa.fake = (function () {
 						cssMap: data.cssMap						
 					};
 					peopleList.push(personMap);
-					callbackMap.userUpdate([personMap]);
+					callbackMap.userupdate([personMap]);
 				}, 3000);
 			}
 

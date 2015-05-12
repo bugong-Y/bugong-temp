@@ -295,7 +295,7 @@ spa.chat = (function () {
 
     onUpdateChat = function (event, msgMap) {//更新消息展示窗口
         var isUser,
-            senderId = msgMap.senderId,
+            senderId = msgMap.senderId,  //当前用户
             msgText = msgMap.msgText,
             chatting = configMap.chatModel.getChatting() || {},
             sender = configMap.peopleModel.getByCid(senderId);
