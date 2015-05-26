@@ -1,3 +1,5 @@
-# bugong-temp
-spa (single page application)
-一个简易的基于node.js的实时对话单页应用。
+# bugong
+## spa-chat  一个基于node.js的实时聊天单页应用。
+## bugong-blog  个人博客
+
+
